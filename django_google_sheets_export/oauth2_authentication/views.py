@@ -37,9 +37,11 @@ def index(request):
         return HttpResponseRedirect(authorize_url)
     else:
         service = discovery.build('sheets', 'v4', credentials=credentials)
-        spreadsheetId = '1_5uMTTXstKUgQvz4Wfo_jw9MolxbnQTYpNrV8RI5fkI'
+        # spreadsheetId = '1_5uMTTXstKUgQvz4Wfo_jw9MolxbnQTYpNrV8RI5fkI'
+        spreadsheetId = '1GfI_4vM9uV4HwaVldrTaXtIlVAknFDSQ2FNdbhWI5eI'
         # range = 'Data Swarm!A:D'
-        range = 'sheets_test_range'
+        # range = 'sheets_test_range'
+        range = 'Sheet1!A:A'
         result = service.spreadsheets().values().get(
             spreadsheetId=spreadsheetId,
             range=range
