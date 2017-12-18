@@ -4,6 +4,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.http import HttpResponseRedirect
 
+from apiclient import discovery
 from oauth2client.contrib import xsrfutil
 from oauth2client.client import OAuth2WebServerFlow
 from oauth2client.contrib.django_util.storage import DjangoORMStorage
@@ -16,7 +17,7 @@ def index(request):
     FLOW = OAuth2WebServerFlow(
         client_id=settings.GOOGLE_OAUTH2_CLIENT_ID,
         client_secret=settings.GOOGLE_OAUTH2_CLIENT_SECRET,
-        scope='https://www.googleapis.com/auth/plus.me',
+        scope='https://www.googleapis.com/auth/spreadsheets.readonly',
         redirect_uri='http://127.0.0.1:8000/oauth2/oauth2callback/'
     )
 
@@ -26,8 +27,8 @@ def index(request):
         request.user,
         'credential'
     )
-    credential = storage.get()
-    if credential is None or credential.invalid:
+    credentials = storage.get()
+    if credentials is None or credentials.invalid:
         FLOW.params['state'] = xsrfutil.generate_token(
             settings.SECRET_KEY,
             request.user
@@ -35,6 +36,16 @@ def index(request):
         authorize_url = FLOW.step1_get_authorize_url()
         return HttpResponseRedirect(authorize_url)
     else:
+        service = discovery.build('sheets', 'v4', credentials=credentials)
+        spreadsheetId = '1_5uMTTXstKUgQvz4Wfo_jw9MolxbnQTYpNrV8RI5fkI'
+        # range = 'Data Swarm!A:D'
+        range = 'sheets_test_range'
+        result = service.spreadsheets().values().get(
+            spreadsheetId=spreadsheetId,
+            range=range
+        ).execute()
+        print(result)
+
         return HttpResponse('authenticated')
 
 
@@ -50,17 +61,17 @@ def auth_return(request):
     FLOW = OAuth2WebServerFlow(
         client_id=settings.GOOGLE_OAUTH2_CLIENT_ID,
         client_secret=settings.GOOGLE_OAUTH2_CLIENT_SECRET,
-        scope='https://www.googleapis.com/auth/plus.me',
+        scope='https://www.googleapis.com/auth/spreadsheets.readonly',
         redirect_uri='http://127.0.0.1:8000/oauth2/oauth2callback/'
     )
 
-    credential = FLOW.step2_exchange(request.GET)
+    credentials = FLOW.step2_exchange(request.GET)
     storage = DjangoORMStorage(
         CredentialsModel,
         'user',
         request.user,
         'credential'
     )
-    storage.put(credential)
+    storage.put(credentials)
 
     return HttpResponseRedirect(reverse('index'))

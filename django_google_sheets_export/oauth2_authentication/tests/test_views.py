@@ -45,14 +45,17 @@ class OAuthIndexViewTest(TestCase):
 
     def test_oauth_view_should_say_authenticated_if_credential_exists(self):
         self.client.login(username='kan', password='pass')
+
         credential = Credentials()
         credential.invalid = False
         CredentialsModel.objects.create(
             user=self.user,
             credential=credential
         )
-        response = self.client.get(reverse('index'))
-        self.assertEqual(response.status_code, 200)
+
+        with patch('oauth2_authentication.views.discovery') as mock:
+            response = self.client.get(reverse('index'))
+            self.assertContains(response, 'authenticated', status_code=200)
 
 
 class OAuthReturnViewTest(TestCase):
