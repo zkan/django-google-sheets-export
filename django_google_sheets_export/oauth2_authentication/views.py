@@ -17,7 +17,7 @@ def index(request):
     FLOW = OAuth2WebServerFlow(
         client_id=settings.GOOGLE_OAUTH2_CLIENT_ID,
         client_secret=settings.GOOGLE_OAUTH2_CLIENT_SECRET,
-        scope='https://www.googleapis.com/auth/spreadsheets.readonly',
+        scope='https://www.googleapis.com/auth/spreadsheets',
         redirect_uri='http://127.0.0.1:8000/oauth2/oauth2callback/'
     )
 
@@ -37,14 +37,40 @@ def index(request):
         return HttpResponseRedirect(authorize_url)
     else:
         service = discovery.build('sheets', 'v4', credentials=credentials)
-        # spreadsheetId = '1_5uMTTXstKUgQvz4Wfo_jw9MolxbnQTYpNrV8RI5fkI'
-        spreadsheetId = '1GfI_4vM9uV4HwaVldrTaXtIlVAknFDSQ2FNdbhWI5eI'
+        spreadsheet_id = '1_5uMTTXstKUgQvz4Wfo_jw9MolxbnQTYpNrV8RI5fkI'
+        # spreadsheetId = '1GfI_4vM9uV4HwaVldrTaXtIlVAknFDSQ2FNdbhWI5eI'
         # range = 'Data Swarm!A:D'
         # range = 'sheets_test_range'
-        range = 'Sheet1!A:A'
+        range_ = 'Sheet4!A:D'
         service.spreadsheets().values().get(
-            spreadsheetId=spreadsheetId,
-            range=range
+            spreadsheetId=spreadsheet_id,
+            range=range_
+        ).execute()
+
+        range_ = 'Sheet5!A:D'
+        service.spreadsheets().values().clear(
+            spreadsheetId=spreadsheet_id,
+            range=range_,
+            body={}
+        ).execute()
+
+        value_range_body = {
+            'values': [
+                ['Sprint', 'Estimated Points', 'Actual Points'],
+                ['1', '23', '23'],
+                ['2', '26', '26'],
+                ['3', '26', '26'],
+                ['4', '70', '70'],
+                ['5', '12', '34'],
+                ['6', '1', '4'],
+            ]
+        }
+        service.spreadsheets().values().append(
+            spreadsheetId=spreadsheet_id,
+            range=range_,
+            valueInputOption='USER_ENTERED',
+            insertDataOption='INSERT_ROWS',
+            body=value_range_body
         ).execute()
 
         return HttpResponse('authenticated')
@@ -62,7 +88,8 @@ def auth_return(request):
     FLOW = OAuth2WebServerFlow(
         client_id=settings.GOOGLE_OAUTH2_CLIENT_ID,
         client_secret=settings.GOOGLE_OAUTH2_CLIENT_SECRET,
-        scope='https://www.googleapis.com/auth/spreadsheets.readonly',
+        # scope='https://www.googleapis.com/auth/spreadsheets.readonly',
+        scope='https://www.googleapis.com/auth/spreadsheets',
         redirect_uri='http://127.0.0.1:8000/oauth2/oauth2callback/'
     )
 

@@ -80,10 +80,87 @@ class OAuthIndexViewTest(TestCase):
             service = mock.build.return_value
             get = service.spreadsheets.return_value.values.return_value.get
             get.assert_called_once_with(
-                spreadsheetId='1GfI_4vM9uV4HwaVldrTaXtIlVAknFDSQ2FNdbhWI5eI',
-                range='Sheet1!A:A'
+                spreadsheetId='1_5uMTTXstKUgQvz4Wfo_jw9MolxbnQTYpNrV8RI5fkI',
+                range='Sheet4!A:D'
             )
             get.return_value.execute.assert_called_once_with()
+
+    def test_oauth_view_should_clear_values_in_sheet_if_credential_exists(
+        self
+    ):
+        self.client.login(username='kan', password='pass')
+
+        credentials = Credentials()
+        credentials.invalid = False
+        CredentialsModel.objects.create(
+            user=self.user,
+            credential=credentials
+        )
+
+        with patch('oauth2_authentication.views.discovery') as mock:
+            response = self.client.get(reverse('index'))
+            self.assertContains(response, 'authenticated', status_code=200)
+
+            mock.build.assert_called_once_with(
+                'sheets',
+                'v4',
+                credentials=ANY
+            )
+
+            service = mock.build.return_value
+            clear = service.spreadsheets.return_value.values.return_value.clear
+            clear.assert_called_once_with(
+                spreadsheetId='1_5uMTTXstKUgQvz4Wfo_jw9MolxbnQTYpNrV8RI5fkI',
+                range='Sheet5!A:D',
+                body={}
+            )
+            clear.return_value.execute.assert_called_once_with()
+
+    def test_oauth_view_should_append_values_in_sheet_if_credential_exists(
+        self
+    ):
+        self.client.login(username='kan', password='pass')
+
+        credentials = Credentials()
+        credentials.invalid = False
+        CredentialsModel.objects.create(
+            user=self.user,
+            credential=credentials
+        )
+
+        with patch('oauth2_authentication.views.discovery') as mock:
+            response = self.client.get(reverse('index'))
+            self.assertContains(response, 'authenticated', status_code=200)
+
+            mock.build.assert_called_once_with(
+                'sheets',
+                'v4',
+                credentials=ANY
+            )
+
+            value_range_body = {
+                'values': [
+                    ['Sprint', 'Estimated Points', 'Actual Points'],
+                    ['1', '23', '23'],
+                    ['2', '26', '26'],
+                    ['3', '26', '26'],
+                    ['4', '70', '70'],
+                    ['5', '12', '34'],
+                    ['6', '1', '4'],
+                ]
+            }
+
+            service = mock.build.return_value
+            values = service.spreadsheets.return_value.values
+            append = values.return_value.append
+            append.assert_called_once_with(
+                spreadsheetId='1_5uMTTXstKUgQvz4Wfo_jw9MolxbnQTYpNrV8RI5fkI',
+                range='Sheet5!A:D',
+                valueInputOption='USER_ENTERED',
+                insertDataOption='INSERT_ROWS',
+                body=value_range_body
+            )
+            append.return_value.execute.assert_called_once_with()
 
 
 class OAuthReturnViewTest(TestCase):
