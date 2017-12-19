@@ -42,11 +42,10 @@ def index(request):
         # range = 'Data Swarm!A:D'
         # range = 'sheets_test_range'
         range = 'Sheet1!A:A'
-        result = service.spreadsheets().values().get(
+        service.spreadsheets().values().get(
             spreadsheetId=spreadsheetId,
             range=range
         ).execute()
-        print(result)
 
         return HttpResponse('authenticated')
 

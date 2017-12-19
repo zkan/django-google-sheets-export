@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 from django.contrib.auth import get_user_model
 from django.core.urlresolvers import reverse
@@ -46,16 +46,44 @@ class OAuthIndexViewTest(TestCase):
     def test_oauth_view_should_say_authenticated_if_credential_exists(self):
         self.client.login(username='kan', password='pass')
 
-        credential = Credentials()
-        credential.invalid = False
+        credentials = Credentials()
+        credentials.invalid = False
         CredentialsModel.objects.create(
             user=self.user,
-            credential=credential
+            credential=credentials
+        )
+
+        with patch('oauth2_authentication.views.discovery'):
+            response = self.client.get(reverse('index'))
+            self.assertContains(response, 'authenticated', status_code=200)
+
+    def test_oauth_view_should_get_values_in_sheet_if_credential_exists(self):
+        self.client.login(username='kan', password='pass')
+
+        credentials = Credentials()
+        credentials.invalid = False
+        CredentialsModel.objects.create(
+            user=self.user,
+            credential=credentials
         )
 
         with patch('oauth2_authentication.views.discovery') as mock:
             response = self.client.get(reverse('index'))
             self.assertContains(response, 'authenticated', status_code=200)
+
+            mock.build.assert_called_once_with(
+                'sheets',
+                'v4',
+                credentials=ANY
+            )
+
+            service = mock.build.return_value
+            get = service.spreadsheets.return_value.values.return_value.get
+            get.assert_called_once_with(
+                spreadsheetId='1GfI_4vM9uV4HwaVldrTaXtIlVAknFDSQ2FNdbhWI5eI',
+                range='Sheet1!A:A'
+            )
+            get.return_value.execute.assert_called_once_with()
 
 
 class OAuthReturnViewTest(TestCase):
